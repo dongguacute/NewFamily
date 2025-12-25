@@ -1,7 +1,10 @@
 import json
 import os
 import requests
-CONFIG_FILE = "config.json"
+
+# 获取项目根目录
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_FILE = os.path.join(ROOT_DIR, "config.json")
 
 class Config:
     def __init__(self):
@@ -13,6 +16,7 @@ class Config:
         # 界面设置
         self.dark_mode = False
         self.show_avatar = True
+        self.language = "zh"
         self.load()
 
     def load(self):
@@ -26,6 +30,7 @@ class Config:
                     self.username = data.get("username", "User")
                     self.dark_mode = data.get("dark_mode", False)
                     self.show_avatar = data.get("show_avatar", True)
+                    self.language = data.get("language", "zh")
             except Exception as e:
                 print(f"Error loading config: {e}")
 
@@ -39,6 +44,7 @@ class Config:
                     "username": self.username,
                     "dark_mode": self.dark_mode,
                     "show_avatar": self.show_avatar,
+                    "language": self.language,
                 }, f, indent=4)
         except Exception as e:
             print(f"Error saving config: {e}")

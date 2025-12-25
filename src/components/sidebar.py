@@ -1,4 +1,5 @@
 import flet as ft
+from i18n import t
 
 class SidebarItem(ft.Container):
     def __init__(self, title, subtitle, icon, on_click, selected=False):
@@ -36,10 +37,32 @@ class Sidebar(ft.Container):
         self.items_list = ft.Column(spacing=4, scroll=ft.ScrollMode.AUTO)
         
         self.chats = [
-            {"id": "1", "title": "NewFamily 助手", "icon": ft.Icons.CHAT_BUBBLE_OUTLINE_ROUNDED},
-            {"id": "2", "title": "项目规划", "icon": ft.Icons.AUTO_AWESOME_OUTLINED},
-            {"id": "3", "title": "代码审查", "icon": ft.Icons.CODE_ROUNDED},
+            {"id": "1", "title": t("chat_assistant"), "icon": ft.Icons.CHAT_BUBBLE_OUTLINE_ROUNDED},
+            {"id": "2", "title": t("chat_planning"), "icon": ft.Icons.AUTO_AWESOME_OUTLINED},
+            {"id": "3", "title": t("chat_code_review"), "icon": ft.Icons.CODE_ROUNDED},
         ]
+        
+        self.settings_item = SidebarItem(
+            t("settings_menu"), 
+            "", 
+            ft.Icons.SETTINGS_OUTLINED, 
+            lambda _: self.on_change_chat("settings"),
+            selected=False
+        )
+        
+        self.new_chat_btn = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Icon(ft.Icons.ADD_ROUNDED, color="#1a73e8"),
+                    ft.Text(t("new_chat"), color="#1a73e8", weight="w500"),
+                ],
+                spacing=12,
+            ),
+            padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            border_radius=16,
+            bgcolor="#D3E3FD",
+        )
+        self.new_chat_btn.on_click = lambda _: print("New Chat")
         
         self.content = ft.Column(
             [
@@ -54,41 +77,29 @@ class Sidebar(ft.Container):
                     padding=ft.padding.only(left=12, top=8, bottom=24),
                     alignment=ft.alignment.Alignment(-1, 0),
                 ),
-                ft.Container(
-                    content=ft.Row(
-                        [
-                            ft.Icon(ft.Icons.ADD_ROUNDED, color="#1a73e8"),
-                            ft.Text("新建对话", color="#1a73e8", weight="w500"),
-                        ],
-                        spacing=12,
-                    ),
-                    padding=ft.padding.symmetric(horizontal=16, vertical=12),
-                    border_radius=16,
-                    bgcolor="#D3E3FD",
-                    on_click=lambda _: print("New Chat"),
-                ),
+                self.new_chat_btn,
                 ft.Container(height=20),
                 ft.Container(
-                    content=ft.Text("最近", size=12, weight="bold", color="#444746"),
+                    content=ft.Text(t("recent"), size=12, weight="bold", color="#444746"),
                     padding=ft.padding.only(left=16)
                 ),
                 self.items_list,
                 ft.Container(expand=True),
                 ft.Divider(height=1),
-                SidebarItem(
-                    "设置", 
-                    "", 
-                    ft.Icons.SETTINGS_OUTLINED, 
-                    lambda _: self.on_change_chat("settings"),
-                    selected=False
-                ),
+                self.settings_item,
             ],
             expand=True,
         )
         self.build_items("1")
 
+
     def build_items(self, selected_id):
         self.items_list.controls.clear()
+        # 更新设置按钮的状态
+        self.settings_item.selected = selected_id == "settings"
+        self.settings_item.bgcolor = "#E1EBFD" if selected_id == "settings" else ft.Colors.TRANSPARENT
+        # 注意：SidebarItem 内部的颜色也需要更新，但这里简单处理背景色
+        
         for chat in self.chats:
             is_selected = chat["id"] == selected_id
             self.items_list.controls.append(

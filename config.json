@@ -4,5 +4,6 @@
     "modelname": "",
     "username": "User",
     "dark_mode": false,
-    "show_avatar": true
+    "show_avatar": true,
+    "language": "zh"
 }

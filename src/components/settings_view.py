@@ -1,9 +1,12 @@
 import flet as ft
 from config import config
+from i18n import t
 
 class SettingsView(ft.Column):
-    def __init__(self):
+    def __init__(self, on_language_change=None):
         super().__init__()
+        self.on_language_change = on_language_change
+        
         self.expand = True
         self.spacing = 30
         self.padding = ft.padding.symmetric(horizontal=40, vertical=30)
@@ -11,49 +14,64 @@ class SettingsView(ft.Column):
         
         # 定义输入控件
         self.api_url = ft.TextField(
-            label="OpenAI API URL",
+            label=t("api_url_label"),
             value=config.openapiurl,
             border_radius=12,
-            on_change=self.save_settings,
         )
+        self.api_url.on_change = self.save_settings
+
         self.api_key = ft.TextField(
-            label="API Key",
+            label=t("api_key_label"),
             value=config.apikey,
             password=True,
             can_reveal_password=True,
             border_radius=12,
-            on_change=self.save_settings,
         )
+        self.api_key.on_change = self.save_settings
+
         self.model_name = ft.TextField(
-            label="模型名称",
+            label=t("model_name_label"),
             value=config.modelname,
             border_radius=12,
-            on_change=self.save_settings,
-            hint_text="例如: gpt-3.5-turbo",
+            hint_text=t("model_name_hint"),
         )
+        self.model_name.on_change = self.save_settings
 
         # 个人资料控件
         self.username_field = ft.TextField(
-            label="用户名",
+            label=t("username_label"),
             value=config.username,
             border_radius=12,
-            on_change=self.save_settings,
         )
+        self.username_field.on_change = self.save_settings
 
         # 界面设置控件
         self.dark_mode_switch = ft.Switch(
-            label="深色模式",
+            label=t("dark_mode_label"),
             value=config.dark_mode,
-            on_change=self.save_settings,
         )
+        self.dark_mode_switch.on_change = self.save_settings
+
         self.show_avatar_switch = ft.Switch(
-            label="显示头像",
+            label=t("show_avatar_label"),
             value=config.show_avatar,
-            on_change=self.save_settings,
         )
+        self.show_avatar_switch.on_change = self.save_settings
+        
+        # 语言设置
+        self.language_dropdown = ft.Dropdown(
+            label=t("language_label"),
+            value=config.language,
+            options=[
+                ft.dropdown.Option("zh", t("language_zh")),
+                ft.dropdown.Option("en", t("language_en")),
+            ],
+            border_radius=12,
+        )
+        self.language_dropdown.on_change = self.change_language
 
         self.test_api_button = ft.ElevatedButton(
-            content=ft.Text("测试 API", color=ft.Colors.WHITE),
+            content=ft.Text(t("test_api_button"), color=ft.Colors.WHITE),
             on_click=self.test_api,
             bgcolor=ft.Colors.BLUE_GREY_700,
             style=ft.ButtonStyle(
@@ -62,11 +80,11 @@ class SettingsView(ft.Column):
         )
         
         self.controls = [
-            ft.Text("设置", size=32, weight="bold", color="#1f1f1f"),
+            ft.Text(t("settings_title"), size=32, weight="bold"),
             
             # AI 配置部分
             self.create_section(
-                "AI 服务配置",
+                t("ai_config_section"),
                 [
                     self.api_url,
                     self.api_key,
@@ -77,7 +95,7 @@ class SettingsView(ft.Column):
             
             # 个人资料部分
             self.create_section(
-                "个人资料",
+                t("profile_section"),
                 [
                     self.username_field,
                 ]
@@ -85,8 +103,9 @@ class SettingsView(ft.Column):
             
             # 界面设置
             self.create_section(
-                "界面定制",
+                t("ui_customization_section"),
                 [
+                    self.language_dropdown,
                     self.dark_mode_switch,
                     self.show_avatar_switch,
                 ]
@@ -94,16 +113,16 @@ class SettingsView(ft.Column):
             
             # 关于
             self.create_section(
-                "关于",
+                t("about_section"),
                 [
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.INFO_OUTLINE_ROUNDED),
-                        title=ft.Text("版本"),
+                        title=ft.Text(t("version_label")),
                         subtitle=ft.Text("NewFamily v0.1.0"),
                     ),
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.DESCRIPTION_OUTLINED),
-                        title=ft.Text("开源许可"),
+                        title=ft.Text(t("license_label")),
                         on_click=lambda _: print("License"),
                     ),
                 ]
@@ -124,33 +143,46 @@ class SettingsView(ft.Column):
             spacing=10,
         )
 
+    def change_language(self, e):
+        new_lang = self.language_dropdown.value
+        if new_lang:
+            config.language = new_lang
+            config.save()
+            if self.on_language_change:
+                self.on_language_change()
+            else:
+                # Fallback if no callback provided
+                self.controls.clear()
+                self.__init__(on_language_change=self.on_language_change)
+                self.update()
+
     def test_api(self, e):
         from config import testapi
         # 禁用按钮，显示正在测试
         self.test_api_button.disabled = True
 
-        self.test_api_button.content = ft.Text("正在测试...", color=ft.Colors.WHITE)
+        self.test_api_button.content = ft.Text(t("testing_api"), color=ft.Colors.WHITE)
         self.update()
         
         success = testapi(self.api_url.value, self.api_key.value, self.model_name.value)
         
         # 恢复按钮
         self.test_api_button.disabled = False
-        self.test_api_button.content = ft.Text("测试 API", color=ft.Colors.WHITE)
+        self.test_api_button.content = ft.Text(t("test_api_button"), color=ft.Colors.WHITE)
         
         # 显示结果
         if success:
             color = ft.Colors.GREEN
-            message = "API 连接成功！"
+            message = t("api_success")
         else:
             color = ft.Colors.RED
-            message = "API 连接失败，请检查配置。"
+            message = t("api_failure")
             
         # 使用 SnackBar 显示结果
         self.page.snack_bar = ft.SnackBar(
             content=ft.Text(message),
             bgcolor=color,
-            action="知道了",
+            action=t("ok"),
         )
         self.page.snack_bar.open = True
         self.page.update()
@@ -162,4 +194,6 @@ class SettingsView(ft.Column):
         config.username = self.username_field.value
         config.dark_mode = self.dark_mode_switch.value
         config.show_avatar = self.show_avatar_switch.value
+        # DO NOT update config.language here, it should only be updated in change_language
         config.save()
+
